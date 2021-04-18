@@ -18,10 +18,6 @@ func (s Stack) IsEmpty() bool {
 	return s.size == 0
 }
 
-func (s Stack) GetSize() int {
-	return s.size
-}
-
 func (s *Stack) Push(v string) {
 	node := node{val: v}
 	node.next = s.top

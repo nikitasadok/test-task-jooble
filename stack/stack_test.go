@@ -80,19 +80,3 @@ func TestStack_IsEmpty(t *testing.T) {
 		assert.Equal(t, isEmpty, testCase.want)
 	}
 }
-
-func TestStack_GetSize(t *testing.T) {
-	testCases := []struct {
-		stack *Stack
-		want  int
-	}{
-		{&Stack{}, 0},
-		{&Stack{top: &node{val: "1"}, size: 1}, 1},
-		{&Stack{top: &node{val: "1"}, size: 2}, 2},
-	}
-	for _, testCase := range testCases {
-		s := testCase.stack
-		isEmpty := s.GetSize()
-		assert.Equal(t, isEmpty, testCase.want)
-	}
-}
