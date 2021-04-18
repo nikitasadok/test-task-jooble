@@ -21,6 +21,10 @@ func NewCalculator(expression string) Calculator {
 	return &calculator{expression: expression, values: values, operations: operations}
 }
 
+func (c *calculator) Evaluate() (float64, error) {
+	return c.evaluate()
+}
+
 func (c *calculator) getPrecedence(ch string) int {
 	if ch == "+" || ch == "-" {
 		return 1
@@ -88,7 +92,7 @@ func (c *calculator) evaluate() (float64, error) {
 		}
 		c.values.Push(fmt.Sprint(res))
 	}
-	n, err := strconv.ParseFloat(c.values.Peek(), 64)
+	n, err := strconv.ParseFloat(c.values.Pop(), 64)
 	if err != nil {
 		log.Println("evaluate() -> wrong value on top of the stack!")
 		return 0.0, err
@@ -108,8 +112,7 @@ func (c *calculator) getResult(arg1, arg2 string) (float64, error) {
 	}
 
 	operator := c.operations.Pop()
-	var res float64
-	res = c.doOperation(op1, op2, operator)
+	res := c.doOperation(op1, op2, operator)
 	return res, nil
 }
 
@@ -143,13 +146,11 @@ func (c *calculator) processOperator(sReader *strings.Reader, ch byte) error {
 		return ErrInvalidExpression
 	}
 
-	for !c.operations.IsEmpty() && c.getPrecedence(string(ch)) <=
-		c.getPrecedence(c.operations.Peek()) {
+	for !c.operations.IsEmpty() && c.getPrecedence(c.operations.Peek()) >= c.getPrecedence(string(ch)) {
 		c.performCalculation()
 	}
 
 	c.operations.Push(string(ch))
-
 	return nil
 }
 
@@ -238,10 +239,6 @@ func (c *calculator) performCalculation() {
 		return
 	}
 	c.values.Push(fmt.Sprint(res))
-}
-
-func (c *calculator) Evaluate() (float64, error) {
-	return c.evaluate()
 }
 
 func (c *calculator) isNumber(ch byte) bool {

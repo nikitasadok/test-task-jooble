@@ -41,5 +41,8 @@ func (s *Stack) Pop() string {
 }
 
 func (s *Stack) Peek() string {
+	if s.IsEmpty() {
+		return ""
+	}
 	return s.top.val
 }
