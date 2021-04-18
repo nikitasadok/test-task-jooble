@@ -67,18 +67,11 @@ func (c *calculator) evaluate() (float64, error) {
 			if !c.operations.IsEmpty() {
 				c.operations.Pop()
 			}
-		case '-':
-			err := c.processMinus(sReader, ch)
+		case '+', '-', '*', '/':
+			err := c.processOperator(sReader, ch)
 			if err != nil {
 				return 0.0, err
 			}
-		case '+', '*', '/':
-			for !c.operations.IsEmpty() && c.getPrecedence(string(ch)) <=
-				c.getPrecedence(c.operations.Peek()) {
-				c.performCalculation()
-			}
-
-			c.operations.Push(string(ch))
 		default:
 			log.Println("evaluate() -> unknown symbol")
 			return 0.0, ErrInvalidExpression
@@ -120,37 +113,44 @@ func (c *calculator) getResult(arg1, arg2 string) (float64, error) {
 	return res, nil
 }
 
-func (c *calculator) processMinus(sReader *strings.Reader, ch byte) error {
+func (c *calculator) processOperator(sReader *strings.Reader, ch byte) error {
 	chNext, err := sReader.ReadByte()
 	if err != nil {
 		log.Println("processOperator() -> error reading next symbol after arithmetic operator, err:", err)
 		return ErrInvalidExpression
 	}
 
-	if c.isNumber(chNext) {
-		sReader.UnreadByte()
+	if c.isNumber(chNext) && (ch == '-' || ch == '+') {
+		err := sReader.UnreadByte()
+		if err != nil {
+			log.Println("processOperator() -> error unreading byte")
+		}
 		n, err := c.processNumber(sReader)
 		if err != nil {
 			log.Println("processOperator() -> error processing number from string, err:", err)
 		}
 
-		n = "-" + n
+		if ch == '-' {
+			n = "-" + n
+		}
+
 		c.values.Push(n)
 		return nil
 	}
 
-	if chNext == ' ' {
-		for !c.operations.IsEmpty() && c.getPrecedence(string(ch)) <=
-			c.getPrecedence(c.operations.Peek()) {
-			c.performCalculation()
-		}
-
-		c.operations.Push(string(ch))
-
-		return nil
+	if chNext != ' ' {
+		log.Println("processOperator() -> wrong symbol after operator")
+		return ErrInvalidExpression
 	}
 
-	return ErrInvalidExpression
+	for !c.operations.IsEmpty() && c.getPrecedence(string(ch)) <=
+		c.getPrecedence(c.operations.Peek()) {
+		c.performCalculation()
+	}
+
+	c.operations.Push(string(ch))
+
+	return nil
 }
 
 func (c *calculator) processNumber(reader *strings.Reader) (string, error) {
@@ -175,7 +175,10 @@ func (c *calculator) processNumber(reader *strings.Reader) (string, error) {
 		return "", ErrInvalidExpression
 	}
 
-	reader.UnreadByte()
+	err := reader.UnreadByte()
+	if err != nil {
+		log.Println("processNumber() -> error unreading byte")
+	}
 
 	return num, nil
 }
